@@ -9,8 +9,8 @@ import java.util.HashMap;
 
 public class XMLParser {
 
-    public static HashMap Parser(String xml_file){
-        HashMap<Object, Variable> data = new HashMap<Object, Variable>();
+    public static HashMap<String, Variable> Parser(String xml_file){
+        HashMap<String, Variable> data = new HashMap<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -26,11 +26,11 @@ public class XMLParser {
                         Element detailElement = (Element) detail;
                         String strElement = detailElement.getTagName();
                         String strElementVal = detailElement.getTextContent();
-                        if(strElement=="NAME"){
+                        if(strElement.equals("NAME")){
                             data.put(strElementVal, v);
                             v.setVar_name(strElementVal);
                         }
-                        else if(strElement=="OUTCOME"){
+                        else if(strElement.equals("OUTCOME")){
                             v.addOutcome(strElementVal);
                         }
 //                        System.out.println(detailElement.getTagName() + ":" + detailElement.getTextContent());
@@ -49,28 +49,24 @@ public class XMLParser {
                         Element detailElement = (Element) detail;
                         String tag = detailElement.getTagName();
                         String val = detailElement.getTextContent();
-                        if(tag=="FOR"){
+                        if(tag.equals("FOR")){
                             curr = val;
                         }
                         Variable v = data.get(curr);
-                        if(tag=="GIVEN"){
+                        if(tag.equals("GIVEN")){
                             v.addParent(val);
                         }
-                        else if(tag=="TABLE"){
+                        else if(tag.equals("TABLE")){
                             v.setCpt(val);
                         }
 //                        System.out.println(detailElement.getTagName() + ":" + detailElement.getTextContent());
                     }
                 }
             }
-        }catch (SAXException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ParserConfigurationException e) {
+        }catch (SAXException | IOException | ParserConfigurationException e) {
             throw new RuntimeException(e);
         }
-    return data;
+        return data;
     }
 
 }

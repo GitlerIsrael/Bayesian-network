@@ -1,5 +1,4 @@
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 
@@ -11,15 +10,23 @@ public class BayesianNetwork {
      * @param txt text file with needed queries.
      * @throws FileNotFoundException throws this exception.
      */
-    public static void calc(String txt) throws FileNotFoundException {
-        File file = new File(txt);
-        Scanner sc = new Scanner(file);
+    public static void calc() throws FileNotFoundException {
+        File inputFile = new File("input.txt");//input file
+        File outputFile = new File("output.txt");//output file+++++++++++++++++++++++++++++++++++
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(outputFile.getAbsoluteFile());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        BufferedWriter bw = new BufferedWriter(fw);
+        Scanner sc = new Scanner(inputFile);
         String xmlFile = sc.nextLine();
         HashMap<String, Variable> originalData= XMLParser.Parser(xmlFile);
         while (sc.hasNextLine()) {
             HashMap<String, Variable> d = copy(originalData);
             String line = sc.nextLine();
-            System.out.println(line);
+//            System.out.println(line);
             String query = line.substring(2,line.length()-3);
             //check if answer for query already exist in one of the cpt tables and return it if it does.
             //first, we will create a list of Strings which will hold all evidence variables
@@ -39,24 +46,56 @@ public class BayesianNetwork {
                 evidencesVars.add(variableAndValue[0]);
                 evidencesVals.add(variableAndValue[1]);
             }
+            // check if the query answer already exist in query variable cpt. if yes, take the answer
+            //immediately. else, send query to relevant algorithm.
             ArrayList<String> queryVarPar = d.get(queryVar).getParents();
-            if(evidencesVars.containsAll(queryVarPar) && queryVarPar.containsAll(evidencesVars)) {
+            if(queryVarPar.size()>0 && evidencesVars.containsAll(queryVarPar)) {
                 String answer = String.valueOf(cptval(queryVar, queryVal, evidencesVars, evidencesVals, d));
-                ///write to file!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
+//                System.out.println(answer+",0,0");
+                try {
+                    bw.write(answer+",0,0");
+                    if(sc.hasNextLine()) bw.write("\n");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
 
             }
-
-            char alg = line.charAt(line.length()-1);
-            ////write to file for each condition
-            if(alg=='1') one(query, d);
-            else if(alg=='2') two(query, d);
-            else if(alg=='3') three(query, d);
+            else{
+                char alg = line.charAt(line.length()-1);
+                ////write to file for each condition
+                if(alg=='1') {
+                    try {
+                        bw.write(one(query, d));
+                        if(sc.hasNextLine()) bw.write("\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                else if(alg=='2') {
+                    try {
+                        bw.write(two(query, d));
+                        if(sc.hasNextLine()) bw.write("\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                else if(alg=='3') {
+                    try {
+                        bw.write(three(query, d));
+                        if(sc.hasNextLine()) bw.write("\n");
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
         }
 
-//        PrintWriter writer = new PrintWriter("output.txt", "UTF-8");
-//        writer.println("The first line");
-//        writer.println("The second line");
-//        writer.close();
+
+        try {
+            bw.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -199,7 +238,7 @@ public class BayesianNetwork {
             }
         }
 
-///////casting to arraylists for cptVal func. need to send to it this data for calc.
+        //casting to arraylists for cptVal func. need to send to it this data for calc.
         ArrayList<ArrayList<String>> combsArr = new ArrayList<>();
         for (List l : allCombinations) {
             ArrayList<String> comb = new ArrayList<>();
@@ -236,7 +275,7 @@ public class BayesianNetwork {
         for(List l: denominatorAllCombinations) {
             l.addAll(splitted.values());
         }
-///////casting to arraylists for cptCol func. need to send to it this data for calc.
+        //casting to arraylists for cptCol func. need to send to it this data for calc.
         ArrayList<ArrayList<String>> denominatorCombsArr = new ArrayList<>();
         for (List l : denominatorAllCombinations) {
             ArrayList<String> denominatorComb = new ArrayList<>();
@@ -266,7 +305,7 @@ public class BayesianNetwork {
         plus-=1;
         DecimalFormat df = new DecimalFormat("#.#####");
         String answer = String.valueOf(df.format(numeratorSum/sum));
-        System.out.println(answer+","+plus+","+mult);
+//        System.out.println(answer+","+plus+","+mult);
 
         return (answer+","+plus+","+mult);
     }
@@ -436,11 +475,11 @@ public class BayesianNetwork {
         //create an hashmap of all optional outcomes:
         HashMap<String,ArrayList<String>> allOutcomes=new HashMap<>();
         for(Variable factor: factors.values()){
-            allOutcomes.put(factor.getVar_name(), factor.getOutcomes());
+            allOutcomes.put(factor.getVar_name(), d.get(factor.getVar_name()).getOutcomes());
             //delete rows from each factor by evidence information and push the new data to factors.
+            boolean erased=false; // if var name was erased or not
             for (Map.Entry<String, String> entry : evidences.entrySet()) {
                 String evidenceVarName = entry.getKey();
-                System.out.println("factor name:  "+ factor.getVar_name());
                 String evidenceOutcome = entry.getValue();
                 int cptLen=factor.getCpt().size();
                 int evidenceOutIndex=d.get(evidenceVarName).getOutcomes().indexOf(evidenceOutcome);
@@ -452,17 +491,18 @@ public class BayesianNetwork {
                         newCpt.add(factor.getCpt().get(pointer));
                         pointer+=outcomesNum;
                     }
+
                     factors.get(factor.getVar_name()).replaceCpt(newCpt);
+                    erased=true;
                 }
                 else{
                     for(String p:factor.getParents()){
-                        System.out.println(p);
-                        Variable parent=d.get(p); ///factors.get
-                        System.out.println(parent);
+                        Variable parent=d.get(p);
                         if(parent.getVar_name().equals(evidenceVarName)){
                             int outChange=factor.getOutcomes().size();
+                            if(erased) outChange=1;
+                            int parentOutNum = parent.getOutcomes().size();
                             List<String> factParents = factor.getParents();
-                            System.out.println("Factor: "+factor.getVar_name()+", parents: "+factParents);
                             for (int i=factParents.size()-1; i>=0; i--) {
                                 if(factParents.get(i).equals(p)) break;
                                 int inParentOutNum=factors.get(factParents.get(i)).getOutcomes().size();
@@ -474,7 +514,7 @@ public class BayesianNetwork {
                                 for(int i=0; i<outChange;i++) {
                                     newCpt.add(factor.getCpt().get(pointer+i));
                                 }
-                                pointer+=outChange*outcomesNum;
+                                pointer+=outChange*parentOutNum;
                             }
                             ArrayList<String> parents = factors.get(factor.getVar_name()).getParents();
                             ArrayList<String> newParents = new ArrayList<>();
@@ -509,7 +549,7 @@ public class BayesianNetwork {
                 factor.setVar_name(null);
             }
         }
-        System.out.println(myFactors);/////////////////////////
+//        System.out.println(myFactors);/////////////////////////
         int[] plusSum=new int[1];
         int[] multSum=new int[1];
         for(String variable:hidden){
@@ -528,27 +568,29 @@ public class BayesianNetwork {
                 if (x.getCpt().size() == y.getCpt().size()) return ascii(x) - ascii(y);
                 else return x.getCpt().size() - y.getCpt().size();
             });
-            System.out.println("Relevant");
-            System.out.println(relevantFactors);
-            System.out.println("\n\n");
+//            System.out.println("Relevant");
+//            System.out.println(relevantFactors);
+//            System.out.println("\n\n");
 
 
             Factor product = relevantFactors.get(0);
             for (int i = 1; i < relevantFactors.size(); i++) {
                 product = multiplyFactors(product, relevantFactors.get(i), allOutcomes, multSum);
             }
-            System.out.println("after multiply");
-            System.out.println(product);
-            System.out.println("\n\n");
-            ////////////eliminate!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            product = eliminate(product, allOutcomes, variable, plusSum);
-            myFactors.add(product);
-            System.out.println("after elimination");
-            System.out.println(product);
-            System.out.println("\n\n");
+//            System.out.println("after multiply");
+//            System.out.println(product);
+//            System.out.println("\n\n");
+            if(product.getVariables().size()>1){
+                product = eliminate(product, allOutcomes, variable, plusSum);
+                myFactors.add(product);
+
+//                System.out.println("after elimination");
+//                System.out.println(product);
+//                System.out.println("\n\n");
+            }
         }
 
-        System.out.println("My Factors:" + myFactors);
+//        System.out.println("My Factors:" + myFactors);
 
         Factor finalProduct;
         if(myFactors.size()>1){
@@ -556,13 +598,14 @@ public class BayesianNetwork {
             for (int i = 1; i < myFactors.size(); i++) {
                 finalProduct = multiplyFactors(finalProduct, myFactors.get(i), allOutcomes, multSum);
             }
-            System.out.println("after multiply");
-            System.out.println(finalProduct);
-            System.out.println("\n\n");
+//            System.out.println("after multiply");
+//            System.out.println(finalProduct);
+//            System.out.println("\n\n");
         }
         else {
             finalProduct = myFactors.get(0);
         }
+
         //find sum of all cpt for normalization.
         double sumOfCpt = 0;
         for(String value:finalProduct.getCpt()){
@@ -578,12 +621,13 @@ public class BayesianNetwork {
         String returnVal = newCpt.get(allOutcomes.get(queryVar).indexOf(queryVal));
         DecimalFormat df = new DecimalFormat("#.#####");
         String answer = String.valueOf(df.format(Double.parseDouble(returnVal)));
-        System.out.println(answer+","+plusSum[0]+","+multSum[0]);
+//        System.out.println(answer+","+plusSum[0]+","+multSum[0]);
 
         return(answer+","+plusSum[0]+","+multSum[0]);
     }
 
-    private static void three(String query, HashMap d) {
+    private static String three(String query, HashMap d) {
+        return "hi";
     }
 
 
