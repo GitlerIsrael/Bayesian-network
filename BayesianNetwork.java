@@ -7,13 +7,12 @@ public class BayesianNetwork {
     /**
      * The function read the text file with the queries and calculate them.
      * Finally, put it in text output file and return it.++++++++++++++++++++++++++++++++++++++++++++++++++++++
-     * @param txt text file with needed queries.
      * @throws FileNotFoundException throws this exception.
      */
     public static void calc() throws FileNotFoundException {
         File inputFile = new File("input.txt");//input file
         File outputFile = new File("output.txt");//output file+++++++++++++++++++++++++++++++++++
-        FileWriter fw = null;
+        FileWriter fw;
         try {
             fw = new FileWriter(outputFile.getAbsoluteFile());
         } catch (IOException e) {
@@ -90,7 +89,6 @@ public class BayesianNetwork {
             }
         }
 
-
         try {
             bw.close();
         } catch (IOException e) {
@@ -99,9 +97,14 @@ public class BayesianNetwork {
     }
 
 
+    /**
+     * the function return a deep copy of the bayesian network hashmap.
+     * @param original the original hashmap.
+     * @return a copied hashmap.
+     */
     private static HashMap<String, Variable> copy(HashMap<String, Variable> original)
     {
-        HashMap<String, Variable> copy = new HashMap<String, Variable>();
+        HashMap<String, Variable> copy = new HashMap<>();
         for (Map.Entry<String, Variable> entry : original.entrySet())
         {
             copy.put(entry.getKey(), new Variable(entry.getValue().getVar_name(),
@@ -114,13 +117,13 @@ public class BayesianNetwork {
 
 
     /**
-     * The function get a query string such - "B=T|M=T,J=T" and return an hashmap
+     * The function get a query string such - "B=T|M=T,J=T" and return a hashmap
      * which holds this data- "{B:T,M:T,J:T}".
      * @param query string of query.
      * @return hashmap of query data.
      */
-    private static HashMap querySplit (String query){
-        HashMap<String, String> map = new HashMap<String, String>();
+    private static HashMap<String, String> querySplit (String query){
+        HashMap<String, String> map = new HashMap<>();
         String[] queryArray = query.split("[|,]", -1);
         for (String data : queryArray) {
             String[] keyValue = data.split("=");
@@ -141,18 +144,16 @@ public class BayesianNetwork {
         Set<List<String>> newCombinations;
 
         int index = 0;
-
-        // extract each of the integers in the first list
-        // and add each to ints as a new list
-
-        for (String i : (data.get(keys[0])).getOutcomes()) {
+        String firstVarOut=(String) keys[0];
+        for (String i : (data.get(firstVarOut)).getOutcomes()) {
             List<String> newList = new ArrayList<>();
             newList.add(i);
             combinations.add(newList);
         }
         index++;
         while (index < keys.length) {
-            List<String> nextList = (data.get(keys[index])).getOutcomes();
+            String nextVarOut=(String) keys[index];
+            List<String> nextList = (data.get(nextVarOut)).getOutcomes();
             newCombinations = new HashSet<>();
             for (List<String> first : combinations) {
                 for (String second : nextList) {
@@ -215,36 +216,28 @@ public class BayesianNetwork {
      * @return the answer of query, plus and multiply operations counters.
      */
     private static String one(String query, HashMap<String, Variable> d) {
-        HashMap<String, String> splitted = (HashMap<String, String>) querySplit(query);
+        //splitting the query string.
+        HashMap<String, String> split = querySplit(query);
         Object[] allKeys= d.keySet().toArray();
-        ArrayList<String> hiddenArrList = new ArrayList<String>();
+        ArrayList<String> hiddenArrList = new ArrayList<>();
         for(Object key: allKeys){
-            if (splitted.get(key)==null){
+            String sKey= (String) key;
+            if (split.get(sKey)==null){
                 hiddenArrList.add((String) key);
             }
         }
         Object[] keys = hiddenArrList.toArray();
         Set<List<String>> allCombinations = allCombinations(d, keys);
-        ArrayList<String> orderOfVars = new ArrayList<String>();
-        for(String key: hiddenArrList){
-            orderOfVars.add(key);
-        }
-        for(String key:splitted.keySet()){
-            orderOfVars.add(key);
-        }
-        for(List l: allCombinations){
-            for(String value: splitted.values()){
-                l.add(value);
-            }
+        ArrayList<String> orderOfVars = new ArrayList<>(hiddenArrList);
+        orderOfVars.addAll(split.keySet());
+        for(List<String> l: allCombinations){
+            l.addAll(split.values());
         }
 
         //casting to arraylists for cptVal func. need to send to it this data for calc.
         ArrayList<ArrayList<String>> combsArr = new ArrayList<>();
-        for (List l : allCombinations) {
-            ArrayList<String> comb = new ArrayList<>();
-            for (Object s : l) {
-                comb.add((String) s);
-            }
+        for (List<String> l : allCombinations) {
+            ArrayList<String> comb = new ArrayList<>(l);
             combsArr.add(comb);
         }
 
@@ -268,20 +261,17 @@ public class BayesianNetwork {
         hiddenArrList.add(queryVar);
         Object[] denominatorKeys = hiddenArrList.toArray();
         Set<List<String>> denominatorAllCombinations = allCombinations(d, denominatorKeys);
-        splitted.remove(queryVar);
+        split.remove(queryVar);
         ArrayList<String> orderOfVarsDenominator = new ArrayList<>();
         orderOfVarsDenominator.addAll(hiddenArrList);
-        orderOfVarsDenominator.addAll(splitted.keySet());
-        for(List l: denominatorAllCombinations) {
-            l.addAll(splitted.values());
+        orderOfVarsDenominator.addAll(split.keySet());
+        for(List<String> l: denominatorAllCombinations) {
+            l.addAll(split.values());
         }
         //casting to arraylists for cptCol func. need to send to it this data for calc.
         ArrayList<ArrayList<String>> denominatorCombsArr = new ArrayList<>();
-        for (List l : denominatorAllCombinations) {
-            ArrayList<String> denominatorComb = new ArrayList<>();
-            for (Object s : l) {
-                denominatorComb.add((String) s);
-            }
+        for (List<String> l : denominatorAllCombinations) {
+            ArrayList<String> denominatorComb = new ArrayList<>(l);
             denominatorCombsArr.add(denominatorComb);
         }
 
@@ -311,6 +301,11 @@ public class BayesianNetwork {
     }
 
 
+    /**
+     * returns the ascii value of factor variables.
+     * @param factor factor.
+     * @return ascii values of factor variables.
+     */
     private static int ascii(Factor factor) {
         ArrayList<String> arr = factor.getVariables();
         int sum=0;
@@ -324,6 +319,14 @@ public class BayesianNetwork {
     }
 
 
+    /**
+     * the function gets 2 factors and multiply them by relevant rows.
+     * @param a first factor.
+     * @param b second factor.
+     * @param outcomes list of all optional outcomes.
+     * @param multSum counter of multiply operations.
+     * @return new factor that created from multiplying.
+     */
     private static Factor multiplyFactors(Factor a, Factor b, HashMap<String, ArrayList<String>> outcomes, int[] multSum){
         ArrayList<String> varsA = a.getVariables();
         ArrayList<String> varsB = b.getVariables();
@@ -349,16 +352,9 @@ public class BayesianNetwork {
         int k = 0;
         while (k >= 0) {
             if (k == lengths.size()) {
-                // do func
-//                for (int i = 0; i < values.length; i++) {
-//                    System.out.print(values[i]);
-//                }
-//                System.out.println();
 
-                //
                 int indexInA = 0;
                 int indexInB = 0;
-                //
 
                 int jumpA = 1;
                 for (int i = varsA.size() - 1; i >= 0; i--) {
@@ -392,25 +388,23 @@ public class BayesianNetwork {
     }
 
 
+    /**
+     * eliminate variable from factor.
+     * @param factor a factor.
+     * @param outcomes list of all optional outcomes.
+     * @param hidden the variable to eliminate.
+     * @param plusSum counter of plus operations.
+     * @return new eliminated factor.
+     */
     private static Factor eliminate(Factor factor, HashMap<String, ArrayList<String>> outcomes, String hidden, int[] plusSum) {
         ArrayList<String> newFactorVars = new ArrayList<>(factor.getVariables());
         newFactorVars.remove(hidden);
         ArrayList<String> newFactorCpt = new ArrayList<>();
 
-
-        ArrayList<Integer> lengths = new ArrayList<>();
-        for (String var : factor.getVariables()) {
-            lengths.add(outcomes.get(var).size());
-        }
-
         int thisJump=outcomes.get(hidden).size();
         int beforeJump=1;
-        int afterJump=1;
         for(int i=factor.getVariables().size()-1;i>factor.getVariables().indexOf(hidden);i--){
             beforeJump*=outcomes.get(factor.getVariables().get(i)).size();
-        }
-        for(int i=0;i<factor.getVariables().indexOf(hidden);i++){
-            afterJump*=outcomes.get(factor.getVariables().get(i)).size();
         }
         for(int i=0; i<factor.getCpt().size(); i+=beforeJump*thisJump){
             for(int j=0; j<beforeJump; j++){
@@ -420,8 +414,8 @@ public class BayesianNetwork {
                     cptValue += Double.parseDouble(factor.getCpt().get(currIndex));
                     plusSum[0]+=1;
                 }
-                // because in the beginning cptValue was 0 and i count plus operation for adding the first value-
-                //i will decrease it by this one plus operation.
+                // because in the beginning cptValue was 0 and I count plus operation for adding the first value-
+                //I will decrease it by this one plus operation.
                 plusSum[0]-=1;
                 newFactorCpt.add(String.valueOf(cptValue));
             }
@@ -430,7 +424,221 @@ public class BayesianNetwork {
     }
 
 
-    public static String two(String query, HashMap<String, Variable> d) {
+    /**
+     * variable elimination algorithm.
+     * @param query the query.
+     * @param d a hashmap which holds the bayesian network.
+     * @return the answer of query, plus and multiply operations counters.
+     */
+    private static String two(String query, HashMap<String, Variable> d) {
+        HashMap<String, String> evidences = new HashMap<>();
+        //splitting query string.
+        String[] questionArray = query.split("\\|", -1);
+        String[] queryArray = questionArray[0].split("=", -1);
+        String queryVar = queryArray[0];
+        String queryVal = queryArray[1];
+        String[] evidenceArray = questionArray[1].split(",", -1);
+        for (String data : evidenceArray) {
+            String[] keyValue = data.split("=");
+            evidences.put(keyValue[0], keyValue[1]);
+        }
+        //delete from factors every variable that is not an ancestor of a query variable or evidence
+        // variable because it irrelevant to the query.
+
+        //first, we will make a set of all relevant variables:
+        ArrayList<String> relevantVars = new ArrayList<>();
+        relevantVars.add(queryVar);
+        relevantVars.addAll(evidences.keySet());
+        Queue<String> queue = new LinkedList<>(relevantVars);
+        while(!queue.isEmpty()) {
+            for (String parent : d.get(queue.poll()).getParents()) {
+                queue.add(parent);
+                relevantVars.add(parent);
+            }
+        }
+
+        HashMap<String, Variable> factors = new HashMap<>();
+        for(String var:d.keySet()){
+            if(relevantVars.contains(var)) factors.put(var, new Variable(d.get(var).getVar_name(),
+                    new ArrayList<>(d.get(var).getOutcomes()),
+                    new ArrayList<>(d.get(var).getParents()),
+                    new ArrayList<>(d.get(var).getCpt())));
+        }
+
+        ArrayList<String> hidden = new ArrayList<>();
+        for(String key: d.keySet()){
+            if(evidences.get(key)==null && !key.equals(queryVar) && relevantVars.contains(key)){
+                hidden.add(key);
+            }
+        }
+        Collections.sort(hidden); ///sort by abc.
+
+        //create an hashmap of all optional outcomes:
+        HashMap<String,ArrayList<String>> allOutcomes=new HashMap<>();
+        for(Variable factor: factors.values()){
+            allOutcomes.put(factor.getVar_name(), d.get(factor.getVar_name()).getOutcomes());
+            //delete rows from each factor by evidence information and push the new data to factors.
+            boolean erased=false; // if var name was erased or not
+            for (Map.Entry<String, String> entry : evidences.entrySet()) {
+                String evidenceVarName = entry.getKey();
+                String evidenceOutcome = entry.getValue();
+                int cptLen=factor.getCpt().size();
+                int evidenceOutIndex=d.get(evidenceVarName).getOutcomes().indexOf(evidenceOutcome);
+                int outcomesNum=factor.getOutcomes().size();
+                if(factor.getVar_name().equals(evidenceVarName)){
+                    ArrayList<String> newCpt=new ArrayList<>();
+                    int pointer=evidenceOutIndex;
+                    while(pointer<cptLen){
+                        newCpt.add(factor.getCpt().get(pointer));
+                        pointer+=outcomesNum;
+                    }
+
+                    factors.get(factor.getVar_name()).replaceCpt(newCpt);
+                    erased=true;
+                }
+                else{
+                    for(String p:factor.getParents()){
+                        Variable parent=d.get(p);
+                        if(parent.getVar_name().equals(evidenceVarName)){
+                            int outChange=factor.getOutcomes().size();
+                            if(erased) outChange=1;
+                            int parentOutNum = parent.getOutcomes().size();
+                            List<String> factParents = factor.getParents();
+                            for (int i=factParents.size()-1; i>=0; i--) {
+                                if(factParents.get(i).equals(p)) break;
+                                int inParentOutNum=factors.get(factParents.get(i)).getOutcomes().size();
+                                outChange*=inParentOutNum;
+                            }
+                            ArrayList<String> newCpt=new ArrayList<>();
+                            int pointer=evidenceOutIndex*outChange;
+                            while(pointer<cptLen){
+                                for(int i=0; i<outChange;i++) {
+                                    newCpt.add(factor.getCpt().get(pointer+i));
+                                }
+                                pointer+=outChange*parentOutNum;
+                            }
+                            ArrayList<String> parents = factors.get(factor.getVar_name()).getParents();
+                            ArrayList<String> newParents = new ArrayList<>();
+                            for(String par:parents){
+                                if(!par.equals(p)) newParents.add(par);
+                            }
+                            factors.get(factor.getVar_name()).setParents(newParents);
+                            factors.get(factor.getVar_name()).replaceCpt(newCpt);
+                        }
+                    }
+                }
+                ArrayList<String> newOutcomes=new ArrayList<>();
+                newOutcomes.add(evidenceOutcome);
+                allOutcomes.put(evidenceVarName, newOutcomes);
+            }
+        }
+
+        //transfer factors to arraylist of Factor class objects which holds the factor variables and its cpt table.
+        //from now I will use myFactors ArrayList and allOutcomes HashMap.
+        ArrayList<Factor> myFactors = new ArrayList<>();
+        for(Variable factor:factors.values()){
+            boolean flag=true;
+            for (String evidence : evidences.keySet()) {
+                if (factor.getVar_name().equals(evidence)) {
+                    flag = false;
+                    break;
+                }
+            }
+            //check that the factor has more than one row:
+            if(factor.getCpt().size()>1) {
+                ArrayList<String> parentsPlusName = new ArrayList<>(factor.getParents());
+                if(flag) parentsPlusName.add(factor.getVar_name());
+                Factor f=new Factor(parentsPlusName, factor.getCpt());
+                myFactors.add(f);
+                factor.setVar_name(null);
+            }
+        }
+        int[] plusSum=new int[1];
+        int[] multSum=new int[1];
+        for(String variable:hidden){
+            ArrayList<Factor> relevantFactors = new ArrayList<>();
+            for(Factor factor:myFactors){
+                if(factor.getVariables().contains(variable)){
+                    relevantFactors.add(factor);
+                }
+            }
+            for(Factor factor:relevantFactors){
+                myFactors.remove(factor);
+            }
+            //sort the factors to multiply by size order. if size is equal sort by sum of ascii values.
+            // used lambda instead of compare.
+            relevantFactors.sort((x, y) -> {
+                if (x.getCpt().size() == y.getCpt().size()) return ascii(x) - ascii(y);
+                else return x.getCpt().size() - y.getCpt().size();
+            });
+
+            Factor product = relevantFactors.get(0);
+            for (int i = 1; i < relevantFactors.size(); i++) {
+                product = multiplyFactors(product, relevantFactors.get(i), allOutcomes, multSum);
+            }
+
+            if(product.getVariables().size()>1){
+                product = eliminate(product, allOutcomes, variable, plusSum);
+                myFactors.add(product);
+
+            }
+        }
+
+        Factor finalProduct;
+        if(myFactors.size()>1){
+            finalProduct = myFactors.get(0);
+            for (int i = 1; i < myFactors.size(); i++) {
+                finalProduct = multiplyFactors(finalProduct, myFactors.get(i), allOutcomes, multSum);
+            }
+        }
+        else {
+            finalProduct = myFactors.get(0);
+        }
+
+        //find sum of all cpt for normalization.
+        double sumOfCpt = 0;
+        for(String value:finalProduct.getCpt()){
+            sumOfCpt+=Double.parseDouble(value);
+            plusSum[0]+=1;
+        }
+        //I added 1 one time more than needed because sumOfCpt started from 0.
+        plusSum[0]-=1;
+        ArrayList<String> newCpt=new ArrayList<>();
+        for(String value:finalProduct.getCpt()){
+            newCpt.add(String.valueOf((Double.parseDouble(value)/sumOfCpt)));
+        }
+        String returnVal = newCpt.get(allOutcomes.get(queryVar).indexOf(queryVal));
+        DecimalFormat df = new DecimalFormat("#.#####");
+        String answer = String.valueOf(df.format(Double.parseDouble(returnVal)));
+
+        return(answer+","+plusSum[0]+","+multSum[0]);
+    }
+
+
+    /**
+     * the function calculate the number of variable neighbors.
+     * @param hidden the variable we want to count its neighbors.
+     * @param d a hashmap which holds the bayesian network.
+     * @return number of variable neighbors.
+     */
+    private static int neighborsCounter(String hidden, HashMap<String, Variable> d){
+        int counter = 0;
+        for(Variable v:d.values()){
+            if(v.getParents().contains(hidden)) counter++;
+        }
+        counter += d.get(hidden).getParents().size();
+        return counter;
+    }
+
+
+    /**
+     * variable elimination algorithm with heuristic way to order the variables elimination.
+     * @param query the query.
+     * @param d a hashmap which holds the bayesian network.
+     * @return the answer of query, plus and multiply operations counters.
+     */
+    private static String three(String query, HashMap<String, Variable> d) {
+        //splitting the query string.
         HashMap<String, String> evidences = new HashMap<>();
         String[] questionArray = query.split("\\|", -1);
         String[] queryArray = questionArray[0].split("=", -1);
@@ -465,12 +673,19 @@ public class BayesianNetwork {
         }
 
         ArrayList<String> hidden = new ArrayList<>();
-        for(Object key: d.keySet()){
+        for(String key: d.keySet()){
             if(evidences.get(key)==null && !key.equals(queryVar) && relevantVars.contains(key)){
-                hidden.add((String) key);
+                hidden.add(key);
             }
         }
-        Collections.sort(hidden); ///sort by abc.
+        // the heuristic order for elimination- first sort by number of neighbors, ascending order. then, if
+        //it equals,sort by cpt table size, descending order.
+        hidden.sort((x, y) -> {
+            if (neighborsCounter(x, d) == neighborsCounter(y, d)){
+                return d.get(y).getCpt().size() - d.get(x).getCpt().size();
+            }
+            else return neighborsCounter(x, d) - neighborsCounter(y, d);
+        });
 
         //create an hashmap of all optional outcomes:
         HashMap<String,ArrayList<String>> allOutcomes=new HashMap<>();
@@ -538,7 +753,10 @@ public class BayesianNetwork {
         for(Variable factor:factors.values()){
             boolean flag=true;
             for (String evidence : evidences.keySet()) {
-                if (factor.getVar_name().equals(evidence)) flag = false;
+                if (factor.getVar_name().equals(evidence)) {
+                    flag = false;
+                    break;
+                }
             }
             //check that the factor has more than one row:
             if(factor.getCpt().size()>1) {
@@ -549,7 +767,6 @@ public class BayesianNetwork {
                 factor.setVar_name(null);
             }
         }
-//        System.out.println(myFactors);/////////////////////////
         int[] plusSum=new int[1];
         int[] multSum=new int[1];
         for(String variable:hidden){
@@ -560,7 +777,7 @@ public class BayesianNetwork {
                 }
             }
             for(Factor factor:relevantFactors){
-                if(myFactors.contains(factor)) myFactors.remove(factor);
+                myFactors.remove(factor);
             }
             //sort the factors to multiply by size order. if size is equal sort by sum of ascii values.
             // used lambda instead of compare.
@@ -568,29 +785,17 @@ public class BayesianNetwork {
                 if (x.getCpt().size() == y.getCpt().size()) return ascii(x) - ascii(y);
                 else return x.getCpt().size() - y.getCpt().size();
             });
-//            System.out.println("Relevant");
-//            System.out.println(relevantFactors);
-//            System.out.println("\n\n");
-
 
             Factor product = relevantFactors.get(0);
             for (int i = 1; i < relevantFactors.size(); i++) {
                 product = multiplyFactors(product, relevantFactors.get(i), allOutcomes, multSum);
             }
-//            System.out.println("after multiply");
-//            System.out.println(product);
-//            System.out.println("\n\n");
+
             if(product.getVariables().size()>1){
                 product = eliminate(product, allOutcomes, variable, plusSum);
                 myFactors.add(product);
-
-//                System.out.println("after elimination");
-//                System.out.println(product);
-//                System.out.println("\n\n");
             }
         }
-
-//        System.out.println("My Factors:" + myFactors);
 
         Factor finalProduct;
         if(myFactors.size()>1){
@@ -598,9 +803,6 @@ public class BayesianNetwork {
             for (int i = 1; i < myFactors.size(); i++) {
                 finalProduct = multiplyFactors(finalProduct, myFactors.get(i), allOutcomes, multSum);
             }
-//            System.out.println("after multiply");
-//            System.out.println(finalProduct);
-//            System.out.println("\n\n");
         }
         else {
             finalProduct = myFactors.get(0);
@@ -609,26 +811,19 @@ public class BayesianNetwork {
         //find sum of all cpt for normalization.
         double sumOfCpt = 0;
         for(String value:finalProduct.getCpt()){
-            sumOfCpt+=Double.valueOf(value);
+            sumOfCpt+=Double.parseDouble(value);
             plusSum[0]+=1;
         }
-        //i added 1 one time more than needed beacause sumOfCpt started from 0.
+        //i added 1 one time more than needed because sumOfCpt started from 0.
         plusSum[0]-=1;
         ArrayList<String> newCpt=new ArrayList<>();
         for(String value:finalProduct.getCpt()){
-            newCpt.add(String.valueOf((Double.valueOf(value)/sumOfCpt)));
+            newCpt.add(String.valueOf((Double.parseDouble(value)/sumOfCpt)));
         }
         String returnVal = newCpt.get(allOutcomes.get(queryVar).indexOf(queryVal));
         DecimalFormat df = new DecimalFormat("#.#####");
         String answer = String.valueOf(df.format(Double.parseDouble(returnVal)));
-//        System.out.println(answer+","+plusSum[0]+","+multSum[0]);
 
         return(answer+","+plusSum[0]+","+multSum[0]);
     }
-
-    private static String three(String query, HashMap d) {
-        return "hi";
-    }
-
-
 }

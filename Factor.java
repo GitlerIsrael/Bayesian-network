@@ -1,11 +1,11 @@
 import java.util.ArrayList;
 
+/**
+ * factor class.
+ */
 public class Factor {
-    private ArrayList<String> variables = new ArrayList<String>();
-    private ArrayList<String> cpt = new ArrayList<String>();
-
-    public Factor() {
-    }
+    private final ArrayList<String> variables;
+    private final ArrayList<String> cpt;
 
     public Factor(ArrayList<String> variables, ArrayList<String> cpt){
         this.variables=variables;
@@ -22,19 +22,8 @@ public class Factor {
         return variables;
     }
 
-    public void setVariables(ArrayList<String> variables) {
-        this.variables = variables;
-    }
-
-    public void addVariable(String variable) {
-        this.variables.add(variable);
-    }
-
     public ArrayList<String> getCpt() {
         return cpt;
     }
 
-    public void setCpt(ArrayList<String> cpt) {
-        this.cpt = cpt;
-    }
 }

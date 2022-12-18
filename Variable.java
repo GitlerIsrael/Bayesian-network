@@ -1,10 +1,15 @@
 import java.util.ArrayList;
+import java.util.Collections;
 
+
+/**
+ * variable (node) class.
+ */
 public class Variable {
     private String var_name = null;
-    private ArrayList<String> outcomes = new ArrayList<String>();
-    private ArrayList<String> parents = new ArrayList<String>();
-    private ArrayList<String> cpt = new ArrayList<String>();
+    private ArrayList<String> outcomes = new ArrayList<>();
+    private ArrayList<String> parents = new ArrayList<>();
+    private ArrayList<String> cpt = new ArrayList<>();
 
     public Variable() {
     }
@@ -19,7 +24,7 @@ public class Variable {
 
     public String toString() {
         // Returning attributes of Variable
-        return "Variable: " + this.var_name + "\nValues: " + this.outcomes.toString() + "\nParents: "
+        return "Variable: " + this.var_name + "\nOutcomes: " + this.outcomes.toString() + "\nParents: "
                 + this.parents.toString() + "\nCPT:  " + this.cpt.toString();
 
     }
@@ -34,10 +39,6 @@ public class Variable {
 
     public ArrayList<String> getOutcomes() {
         return outcomes;
-    }
-
-    public void setOutcomes(ArrayList<String> outcomes) {
-        this.outcomes=outcomes;
     }
 
     public void addOutcome(String value) {
@@ -61,10 +62,8 @@ public class Variable {
     }
 
     public void setCpt(String cpt) {
-        String[] c = cpt.split(" ", 0);
-        for(int i=0; i<c.length; i++){
-            this.cpt.add(c[i]);
-        }
+        String[] values = cpt.split(" ", 0);
+        Collections.addAll(this.cpt, values);
     }
 
     public void replaceCpt(ArrayList<String> cpt){

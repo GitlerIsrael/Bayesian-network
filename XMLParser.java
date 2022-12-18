@@ -9,6 +9,12 @@ import java.util.HashMap;
 
 public class XMLParser {
 
+
+    /**
+     * parsing the xml file.
+     * @param xml_file xml file.
+     * @return an hashmap which holds all xml data.
+     */
     public static HashMap<String, Variable> Parser(String xml_file){
         HashMap<String, Variable> data = new HashMap<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
