@@ -15,7 +15,7 @@ public class Factor {
 
     public String toString() {
         // Returning attributes of Variable
-        return "Factor Variables: " + this.variables.toString() + "\nCPT:  " + this.cpt.toString();
+        return "Factor Variables: " + this.variables.toString() + ", CPT:  " + this.cpt.toString() +"\n";
     }
 
     public ArrayList<String> getVariables() {

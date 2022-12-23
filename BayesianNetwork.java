@@ -199,9 +199,7 @@ public class BayesianNetwork {
                 int temp = rowCount / pOutcomeNum;
                 rowCount = rowCount / pOutcomeNum * pOutcomeIndex;
                 myIndex += rowCount;
-                if(rowCount==0){
-                    rowCount=temp;
-                }
+                rowCount=temp;
             }
         }
         myIndex += var.getOutcomes().indexOf(outcome);
@@ -248,7 +246,7 @@ public class BayesianNetwork {
                 int varIndex = orderOfVars.indexOf(var);
                 String varOutcome = arr.get(varIndex);
                 double rowVal = cptval(var, varOutcome, orderOfVars, arr, d);
-                innerSum =innerSum*rowVal;
+                innerSum=innerSum*rowVal;
             }
             numeratorSum+=innerSum;
         }
@@ -295,7 +293,6 @@ public class BayesianNetwork {
         plus-=1;
         DecimalFormat df = new DecimalFormat("#.#####");
         String answer = String.valueOf(df.format(numeratorSum/sum));
-//        System.out.println(answer+","+plus+","+mult);
 
         return (answer+","+plus+","+mult);
     }
@@ -430,7 +427,7 @@ public class BayesianNetwork {
      * @param d a hashmap which holds the bayesian network.
      * @return the answer of query, plus and multiply operations counters.
      */
-    private static String two(String query, HashMap<String, Variable> d) {
+    public static String two(String query, HashMap<String, Variable> d) {
         HashMap<String, String> evidences = new HashMap<>();
         //splitting query string.
         String[] questionArray = query.split("\\|", -1);
@@ -553,6 +550,7 @@ public class BayesianNetwork {
                 factor.setVar_name(null);
             }
         }
+
         int[] plusSum=new int[1];
         int[] multSum=new int[1];
         for(String variable:hidden){
@@ -580,9 +578,9 @@ public class BayesianNetwork {
             if(product.getVariables().size()>1){
                 product = eliminate(product, allOutcomes, variable, plusSum);
                 myFactors.add(product);
-
             }
         }
+
 
         Factor finalProduct;
         if(myFactors.size()>1){
